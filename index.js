@@ -12,7 +12,7 @@ app.use(express.json());
 app.disable('x-powered-by');
 
 
-app.use('/api/users',require('./server/routes/users.js'));
+app.use(require('./server/routes/users.js'));
 
 
 app.get('/api', async (req, res) => {
