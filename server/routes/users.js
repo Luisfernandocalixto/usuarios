@@ -47,12 +47,12 @@ router.post('/user', async (req, res) => {
         const result = await newUser.save();
         res.status(200).json(result);
 
-        // if (!result) {
-        //     res.status(403).json({ message: 'Error the data saved' })
-        // }
+        if (!result) {
+            res.status(403).json({ message: 'Error the data saved' })
+        }
 
     } catch (error) {
-        // res.status(400).json({ message: 'Error internal server' })
+        res.status(400).json({ message: 'Error internal server' })
         console.log('Error');
     }
 });
@@ -65,13 +65,13 @@ router.put('/user/:id', async (req, res) => {
         const result = await User.findByIdAndUpdate(paramsId, { name: data.name, email: data.email });
         res.status(200).json(result);
 
-        // if (!result) {
-        //     res.status(403).json({ message: 'Error the data updated' })
-        // }
+        if (!result) {
+            res.status(403).json({ message: 'Error the data updated' })
+        }
 
 
     } catch (error) {
-        // res.status(400).json({ message: 'Error internal server' })
+        res.status(400).json({ message: 'Error internal server' })
         console.log('Error');
     }
 });
@@ -84,12 +84,12 @@ router.delete('/user/:id', async (req, res) => {
         const result = await User.findByIdAndDelete(query);
         res.status(200).json(result);
         
-        // if (!result) {
-        //     res.status(403).json({ message: 'Error the data deleted'});            
-        // }
+        if (!result) {
+            res.status(403).json({ message: 'Error the data deleted'});            
+        }
         
     } catch (error) {
-        // res.status(400).json({ message: 'Error internal server'});            
+        res.status(400).json({ message: 'Error internal server'});            
         console.log('Error');
     }
 });
