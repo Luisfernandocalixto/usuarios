@@ -1,20 +1,34 @@
 const { validatePartialUser } = require("../verify/functions");
 const User = require('../model/User.js');
-
+const ITEMS_PER_PAGE = 5;
 class UserController {
 
     //  Fetch All Users
     static async getUsers(req, res) {
         try {
-            const queryUsers = await User.find();
-            const data = queryUsers.map(user => {
+            let {page} = req.query;
+            if(!page) page = 1;
+            // Is important offset for pagination
+            const offset = (page - 1) * ITEMS_PER_PAGE;
+
+            const queryUsers = await User.find({},{__v: 0})
+            .sort({ createdAt: -1 })
+            .skip(offset)
+            .limit(ITEMS_PER_PAGE);
+
+            const users = queryUsers.map(user => {
                 return {
-                    _id: user._id,
+                    id: user._id,
                     email: user.email,
                     name: user.name,
                 }
             })
-            return res.status(200).json(data);
+
+            const  queryPages = await User.find().countDocuments();
+            
+            const totalPages = Math.ceil(Number(queryPages) / ITEMS_PER_PAGE)
+
+            return res.status(200).json({users, totalPages});
         } catch (error) {
             return res.status(500).json({ message: 'Error internal server, error show users' })
         }
@@ -24,7 +38,7 @@ class UserController {
     //  Fetch a Single User by ID
     static async getUser(req, res) {
         try {
-            const id = req.params.id;
+            const {id} = req.params;
             const verify = validatePartialUser({ id });
             if (!verify.success) {
                 const message = JSON.parse(verify.error);
@@ -32,11 +46,10 @@ class UserController {
                 return res.status(400).json(errors)
             }
 
-            const query = { _id: id };
-            const queyUser = await User.findOne(query);
+            const queyUser = await User.findOne({_id: id},{__v:0});
 
             const user = {
-                _id: queyUser._id,
+                id: queyUser._id,
                 email: queyUser.email,
                 name: queyUser.name,
             }
@@ -59,17 +72,18 @@ class UserController {
                 const errors = message.map(err => `${err.message}, `);
                 return res.status(400).json(errors)
             }
-
-            const data = req.body;
+            
             const newUser = new User({
-                name: data.name,
-                email: data.email
-
+                name: verify.data.name,
+                email: verify.data.email
+                
             })
-
-            const result = await newUser.save();
-            return res.status(200).json(result);
-
+            
+            const result = await newUser.save()
+            const user = {id: result._id,name:result.name,email:result.email}
+            
+            return res.status(200).json(user);
+            
         } catch (error) {
             return res.status(500).json({ message: 'Error internal server, error adding to user' })
         }
@@ -85,13 +99,15 @@ class UserController {
                 return res.status(400).json(errors)
             }
 
-            const data = req.body;
-            const paramsId = req.params.id;
-            const result = await User.findByIdAndUpdate(paramsId, { name: data.name, email: data.email });
+            const exist = await User.exists({_id: verify.data.id});
+            if(!exist) return res.status(500).json('User not found');
+            
+            const result = await User.findByIdAndUpdate(verify.data.id, { name: req.body.name, email: req.body.email });
+            const user = {id: result.id, name:req.body.name, email: result.email};
 
-            return res.status(200).json(result);
-
-
+            return res.status(200).json(user);
+            
+            
         } catch (error) {
             return res.status(500).json({ message: 'Error internal server' })
         }
@@ -107,19 +123,22 @@ class UserController {
                 return res.status(400).json(errors)
             }
 
-            const id = req.params.id;
-            const query = { _id: id };
-            const result = await User.findByIdAndDelete(query);
+            const exist = await User.exists({_id: verify.data.id});
+            if(!exist) return res.status(500).json('User not found');
 
-            return res.status(200).json(result);
+            const result = await User.findByIdAndDelete({_id:verify.data.id});
+            const user = {id: result._id, name: result.name, email: result.email}
+
+            return res.status(200).json(user);
 
 
         } catch (error) {
             return res.status(500).json({ message: 'Error internal server' });
         }
     };
-
-
+    
+    
+    
 }
 
 
