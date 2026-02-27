@@ -1,6 +1,6 @@
-const { validatePartialUser } = require("../verify/functions");
+const { validatePartialUser } = require("../verify/functions.js");
 const User = require('../model/User.js');
-const ITEMS_PER_PAGE = 5;
+const { ITEMS_PER_PAGE } = require("../config/user/user.constants.js");
 class UserController {
 
     //  Fetch All Users
@@ -22,15 +22,15 @@ class UserController {
                     email: user.email,
                     name: user.name,
                 }
-            })
+            });
 
             const  queryPages = await User.find().countDocuments();
             
-            const totalPages = Math.ceil(Number(queryPages) / ITEMS_PER_PAGE)
+            const totalPages = Math.ceil(Number(queryPages) / ITEMS_PER_PAGE);
 
             return res.status(200).json({users, totalPages});
         } catch (error) {
-            return res.status(500).json({ message: 'Error internal server, error show users' })
+            return res.status(500).json({ message: 'Error internal server, error show users' });
         }
     };
 
@@ -43,7 +43,7 @@ class UserController {
             if (!verify.success) {
                 const message = JSON.parse(verify.error);
                 const errors = message.map(err => `${err.message}, `);
-                return res.status(400).json(errors)
+                return res.status(400).json(errors);
             }
 
             const queyUser = await User.findOne({_id: id},{__v:0});
@@ -59,7 +59,7 @@ class UserController {
 
 
         } catch (error) {
-            return res.status(500).json({ message: 'Error internal server, error show user' })
+            return res.status(500).json({ message: 'Error internal server, error show user' });
         }
     };
 
@@ -70,22 +70,22 @@ class UserController {
             if (!verify.success) {
                 const message = JSON.parse(verify.error);
                 const errors = message.map(err => `${err.message}, `);
-                return res.status(400).json(errors)
+                return res.status(400).json(errors);
             }
             
             const newUser = new User({
                 name: verify.data.name,
                 email: verify.data.email
                 
-            })
+            });
             
-            const result = await newUser.save()
-            const user = {id: result._id,name:result.name,email:result.email}
+            const result = await newUser.save();
+            const user = { id: result._id, name: result.name, email: result.email }
             
             return res.status(200).json(user);
             
         } catch (error) {
-            return res.status(500).json({ message: 'Error internal server, error adding to user' })
+            return res.status(500).json({ message: 'Error internal server, error adding to user' });
         }
     };
 
@@ -96,20 +96,20 @@ class UserController {
             if (!verify.success) {
                 const message = JSON.parse(verify.error);
                 const errors = message.map(err => `${err.message}, `);
-                return res.status(400).json(errors)
+                return res.status(400).json(errors);
             }
 
             const exist = await User.exists({_id: verify.data.id});
             if(!exist) return res.status(500).json('User not found');
             
             const result = await User.findByIdAndUpdate(verify.data.id, { name: req.body.name, email: req.body.email });
-            const user = {id: result.id, name:req.body.name, email: result.email};
+            const user = { id: result.id, name: req.body.name, email: result.email };
 
             return res.status(200).json(user);
             
             
         } catch (error) {
-            return res.status(500).json({ message: 'Error internal server' })
+            return res.status(500).json({ message: 'Error internal server' });
         }
     };
 
@@ -120,14 +120,14 @@ class UserController {
             if (!verify.success) {
                 const message = JSON.parse(verify.error);
                 const errors = message.map(err => `${err.message}, `);
-                return res.status(400).json(errors)
+                return res.status(400).json(errors);
             }
 
             const exist = await User.exists({_id: verify.data.id});
             if(!exist) return res.status(500).json('User not found');
 
-            const result = await User.findByIdAndDelete({_id:verify.data.id});
-            const user = {id: result._id, name: result.name, email: result.email}
+            const result = await User.findByIdAndDelete({ _id: verify.data.id });
+            const user = { id: result._id, name: result.name, email: result.email }
 
             return res.status(200).json(user);
 
