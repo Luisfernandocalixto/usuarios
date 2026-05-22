@@ -1,6 +1,7 @@
 const { validatePartialUser } = require("../verify/functions.js");
 const User = require('../model/User.js');
 const { ITEMS_PER_PAGE } = require("../config/user/user.constants.js");
+const { default: mongoose } = require("mongoose");
 class UserController {
 
     //  Fetch All Users
@@ -24,12 +25,17 @@ class UserController {
                 }
             });
 
+            
+
+
             const  queryPages = await User.find().countDocuments();
             
             const totalPages = Math.ceil(Number(queryPages) / ITEMS_PER_PAGE);
 
             return res.status(200).json({users, totalPages});
         } catch (error) {
+            console.log(error);
+            
             return res.status(500).json({ message: 'Error internal server, error show users' });
         }
     };
@@ -46,15 +52,23 @@ class UserController {
                 return res.status(400).json(errors);
             }
 
-            const queyUser = await User.findOne({_id: id},{__v:0});
+            const existUser = await User.exists({ _id: verify.data.id });
+            if (!existUser) return res.status(500).json('User not found');
 
-            const user = {
-                id: queyUser._id,
-                email: queyUser.email,
-                name: queyUser.name,
-            }
+            const findUser = await User.aggregate([
+                {
+                    $project: {
+                        id: "$_id", name: 1, email: 1,
+                    }
+                }, {
+                    $match: {
+                        _id: new mongoose.Types.ObjectId(id)
+                    }
+                }
+            ]);
+            const [{ _id, ...dataUser }] = findUser;
 
-            return res.status(200).json(user);
+            return res.status(200).json(dataUser);
 
 
 
@@ -72,6 +86,17 @@ class UserController {
                 const errors = message.map(err => `${err.message}, `);
                 return res.status(400).json(errors);
             }
+            
+            const findUserByName = await User.findOne({ name: req.body.name });
+            if (findUserByName) {
+                return res.status(400).json('exist user with name!');
+            }
+            const findUserByEmail = await User.findOne({ email: req.body.email });
+            if (findUserByEmail) {
+                return res.status(400).json('exist user with email!');
+            }
+                        
+
             
             const newUser = new User({
                 name: verify.data.name,
@@ -101,6 +126,15 @@ class UserController {
 
             const exist = await User.exists({_id: verify.data.id});
             if(!exist) return res.status(500).json('User not found');
+
+            const findUserByName = await User.findOne({ name: req.body.name });
+            if (findUserByName) {
+                return res.status(400).json('exist user with name!');
+            }
+            const findUserByEmail = await User.findOne({ email: req.body.email });
+            if (findUserByEmail) {
+                return res.status(400).json('exist user with email!');
+            }
             
             const result = await User.findByIdAndUpdate(verify.data.id, { name: req.body.name, email: req.body.email });
             const user = { id: result.id, name: req.body.name, email: result.email };
